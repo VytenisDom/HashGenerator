@@ -22,14 +22,15 @@ int checkPrimaryHash (int hash) {
 void createHash(string input, string secret) {
     int hash = 1024;
     int hashArr[8];
-
+    cout<<"input size is : "<<input.size()<<endl;
     for (int i = 0; i < input.size(); i++) {
-        hash = (hash * input[i] + pow(i * 2, 2));
+        hash += input[i] + pow(i * 2, 2);
     }
     hash = checkPrimaryHash(hash);
     cout<<"hash is : "<< hex << hash<<endl;
     for (int i = 1; i <= 8; i++) {
-        hashArr[i-1] = hash * secret[pow(i, 4.75) / sqrt(i)];
+        // hashArr[i-1] = hash * secret[pow(i, 4.75) / sqrt(i)];
+        hashArr[i-1] = checkPrimaryHash(hash * secret[pow(i, 4.75) / sqrt(i)]);
     }
 
     for (int i = 0; i < 8; i++) {
@@ -42,7 +43,12 @@ string readFromFile(string fileName) {
     vector<string> words;
     ifstream infile (fileName);
     for (int i = 0; ;i++) {
-        if (infile.eof()) break;
+        if (infile.eof()) {
+            if (!i) {
+                finalString = "";
+            }
+            break;
+        }
         infile>>word;
         words.push_back(word);
     }

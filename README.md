@@ -1,6 +1,6 @@
 # Hash Generator, Release v0.1
 A hash generating program, which hashes strings or files by my own hashing algorithm. Outputs 256bit (64 character) hashes. 
-The program can be ran in five different modes:
+The program can be ran in five different modes: <br/>
   1: File input - Hashes a file, by joining treating data as a string, and produces one hash. <br/>
   2: Manual input - Hashes a string of text, entered in the console.<br/>
   3: Constitution - Hashes a file <b>konstitucija.txt</b>. Produces one hash per line.<br/>
@@ -14,13 +14,13 @@ Reads and hashes every line and outputs hashes in the console window. <br/>
   
 # Testing results (Collision) <br/>
 Using mode 4 and 5 (Random and similar pairs of the same length) <br/>
-Both files have 100000 strings.
+Both files have 100000 strings. <br/>
   Random pairs (Mode 4) - 0.002%<br/>
   Similar pairs (Mode 5) - 0%<br/>
 
 # Testing results (Similarity) <br/>
 Using mode 4 and 5 (Random and similar pairs of the same length) <br/>
-Both files have 100000 strings.
+Both files have 100000 strings. <br/>
   Random pairs (Mode 4) :<br/>
     Average (Binary) - 60.8% <br/>
     Average (Hex) - 24.45% <br/>

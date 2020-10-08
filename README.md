@@ -26,7 +26,8 @@ Both files have 100000 strings. <br/>
     Average (Hex) - 24.45% <br/>
     Min (Hex) - 0% <br/>
     Max (Hex) - 100% (Collision)<br/>
-  Similar pairs (Mode 5) - 0%<br/>
+    <br/>
+  Similar pairs (Mode 5):<br/>
     Average (Binary) - 59.1% <br/>
     Average (Hex) - 21.78% <br/>
     Min (Hex) - 0% <br/>

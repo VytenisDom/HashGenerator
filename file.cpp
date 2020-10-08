@@ -94,14 +94,14 @@ void createHash(string input, string secret) {
 
     string finalHex = "";
     for (int i = 0; i < 8; i++) {
-        cout << hex << hashArr[i];
+        // cout << hex << hashArr[i];
 
         stringstream stream;
         stream << hex << hashArr[i];
         string result( stream.str() );
         finalHex += result;
     }
-    cout<<endl;
+    // cout<<endl;
 
     string finalBin = getBinStrFromHexStr(finalHex);
     string lastFinalBin = getBinStrFromHexStr(lastFinalHex);

@@ -8,6 +8,13 @@
 #include <sstream>
 using namespace std;
 
+class user {
+    public:
+        int firstName;
+        string publicKey;
+        int balance;
+};
+
 string hexCharToBinStr (char c)
 {
     switch(c)
@@ -38,6 +45,13 @@ string getBinStrFromHexStr (string hex) {
         binStr += hexCharToBinStr(hex[i]);
     }
     return binStr;
+}
+
+string IntToString(int a)
+{
+    ostringstream temp;
+    temp << a;
+    return temp.str();
 }
 
 long int checkPrimaryHash (long int hash) {
@@ -71,22 +85,18 @@ double binSumOfSimilarityPercentages = 0;
 double sumOfSimilarityPercentages = 0;
 double minSimilarityPercentage = 100;
 double maxSimilarityPercentage = 0;
-void createHash(string input, string secret) {
+string createHash(string input, string secret) {
     long int hash = 1024;
     long int hashArr[8];
-    // cout<<input<<endl;
-    // cout<<"input size is : "<<input.size()<<endl;
     for (int i = 0; i < input.size(); i++) {
         hash += (input[i] * input[i]) + pow(i * 2, 2);
     }
     hash = checkPrimaryHash(hash);
     if (hash == lastHash) {
-        // cout<<"COLLISION ["<<input<<","<<lastInput<<"]"<<endl;
         collisionCount++;
     }
     lastHash = hash;
     lastInput = input;
-    // cout<<"hash is : "<< hex << hash<<endl;
     for (int i = 1; i <= 8; i++) {
         hashArr[i-1] = hash * secret[pow(i, 4.75) / sqrt(i)];
         hashArr[i-1] = checkPrimaryHash(hash * secret[pow(i, 4.75) / sqrt(i)]);
@@ -129,8 +139,8 @@ void createHash(string input, string secret) {
     } else if (similarityPercentage < minSimilarityPercentage) {
         minSimilarityPercentage = similarityPercentage;
     }
-    // cout << "Similarity on hex level is - " << similarityPercentage << endl;
     lastFinalHex = finalHex;
+    return finalHex;
 }
 
 string readFromFile(string fileName) {
@@ -166,10 +176,24 @@ void readFromFileByLine (string fileName) {
     }
 }
 
+void generateNewUsers (vector<user> u, int n) {
+    srand(time(NULL));
+    for (int i = 0; i < n; i++){
+        u.push_back(user());
+        u[i].firstName = i;
+        u[i].publicKey = createHash(IntToString(rand()), secret);
+        u[i].balance = 100 + rand() % 1000000;
+        // cout << u[i].firstName << " " <<u[i].publicKey << " " << u[i].balance << endl;
+    }
+}
+
 int main (int argc, char *argv[]) {
     int selection = atoi(argv[1]);
     string input;
     string givenFileName;
+
+    vector<user> u;
+    generateNewUsers(u, 1000);
     
     switch (selection){
         case 0: {

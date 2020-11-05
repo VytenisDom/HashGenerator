@@ -15,6 +15,14 @@ class user {
         int balance;
 };
 
+// class transaction {
+//     public:
+//         string transactionID;
+//         string senderPublicKey;
+//         string receiverPublicKey;
+//         int sum;
+// };
+
 string hexCharToBinStr (char c)
 {
     switch(c)
@@ -104,14 +112,14 @@ string createHash(string input, string secret) {
 
     string finalHex = "";
     for (int i = 0; i < 8; i++) {
-        // cout << hex << hashArr[i];
+        cout << hex << hashArr[i];
 
         stringstream stream;
         stream << hex << hashArr[i];
         string result( stream.str() );
         finalHex += result;
     }
-    // cout<<endl;
+    cout<<endl;
 
     string finalBin = getBinStrFromHexStr(finalHex);
     string lastFinalBin = getBinStrFromHexStr(lastFinalHex);
@@ -187,13 +195,36 @@ void generateNewUsers (vector<user> u, int n) {
     }
 }
 
+// void generateNewTransactions (vector<transaction> tx, int n) {
+//     srand(time(NULL));
+//     for (int i = 0; i < n; i++){
+//         tx.push_back(transaction());
+//         tx[i].transactionID = createHash(IntToString(rand()), secret);
+//         tx[i].senderPublicKey = createHash(IntToString(rand()), secret);
+//         tx[i].receiverPublicKey = createHash(IntToString(rand()), secret);
+//         tx[i].sum = 50; //100 + rand() % 1000000
+//         // cout << u[i].firstName << " " <<u[i].publicKey << " " << u[i].balance << endl;
+//     }
+// }
+
+// void addTransactionsToPool(vector<transaction> pool, vector<transaction> tx) {
+//     for (int i = 0; i < tx.size(); i++){
+//         pool.push_back(tx[i]);
+//     }
+// }
+
 int main (int argc, char *argv[]) {
     int selection = atoi(argv[1]);
     string input;
     string givenFileName;
 
     vector<user> u;
+    // vector<transaction> tx;
+    // vector<transaction> pool;
+
     generateNewUsers(u, 1000);
+    // generateNewTransactions(tx, 10000);
+    // addTransactionsToPool(pool, tx);
     
     switch (selection){
         case 0: {

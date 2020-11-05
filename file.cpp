@@ -15,13 +15,26 @@ class user {
         int balance;
 };
 
-// class transaction {
-//     public:
-//         string transactionID;
-//         string senderPublicKey;
-//         string receiverPublicKey;
-//         int sum;
-// };
+class transaction {
+    public:
+        string transactionID;
+        string senderPublicKey;
+        string receiverPublicKey;
+        int sum;
+};
+
+class block {
+    public:
+        //Header
+        string prevBlockHash;
+        string timestamp;
+        string version;
+        string merkelRootHash;
+        string Nonce;
+        string DiffTarget;
+        //Body
+        vector<transaction> tx;
+};
 
 string hexCharToBinStr (char c)
 {
@@ -93,6 +106,8 @@ double binSumOfSimilarityPercentages = 0;
 double sumOfSimilarityPercentages = 0;
 double minSimilarityPercentage = 100;
 double maxSimilarityPercentage = 0;
+
+const int TRANSACTIONS_PER_BLOCK = 100;
 string createHash(string input, string secret) {
     long int hash = 1024;
     long int hashArr[8];
@@ -112,14 +127,15 @@ string createHash(string input, string secret) {
 
     string finalHex = "";
     for (int i = 0; i < 8; i++) {
-        cout << hex << hashArr[i];
+        // cout << hex << hashArr[i];
+        cout << hex;
 
         stringstream stream;
         stream << hex << hashArr[i];
         string result( stream.str() );
         finalHex += result;
     }
-    cout<<endl;
+    // cout<<endl;
 
     string finalBin = getBinStrFromHexStr(finalHex);
     string lastFinalBin = getBinStrFromHexStr(lastFinalHex);
@@ -184,7 +200,7 @@ void readFromFileByLine (string fileName) {
     }
 }
 
-void generateNewUsers (vector<user> u, int n) {
+void generateNewUsers (vector<user> &u, int n) {
     srand(time(NULL));
     for (int i = 0; i < n; i++){
         u.push_back(user());
@@ -195,23 +211,47 @@ void generateNewUsers (vector<user> u, int n) {
     }
 }
 
-// void generateNewTransactions (vector<transaction> tx, int n) {
-//     srand(time(NULL));
-//     for (int i = 0; i < n; i++){
-//         tx.push_back(transaction());
-//         tx[i].transactionID = createHash(IntToString(rand()), secret);
-//         tx[i].senderPublicKey = createHash(IntToString(rand()), secret);
-//         tx[i].receiverPublicKey = createHash(IntToString(rand()), secret);
-//         tx[i].sum = 50; //100 + rand() % 1000000
-//         // cout << u[i].firstName << " " <<u[i].publicKey << " " << u[i].balance << endl;
-//     }
-// }
+void generateNewTransactions (vector<transaction> &tx, int n) {
+    srand(time(NULL));
+    for (int i = 0; i < n; i++){
+        tx.push_back(transaction());
+        tx[i].transactionID = createHash(IntToString(rand()), secret);
+        tx[i].senderPublicKey = createHash(IntToString(rand()), secret);
+        tx[i].receiverPublicKey = createHash(IntToString(rand()), secret);
+        tx[i].sum = 50; //100 + rand() % 1000000
+        // cout << u[i].firstName << " " <<u[i].publicKey << " " << u[i].balance << endl;
+    }
+}
 
-// void addTransactionsToPool(vector<transaction> pool, vector<transaction> tx) {
-//     for (int i = 0; i < tx.size(); i++){
-//         pool.push_back(tx[i]);
-//     }
-// }
+void addTransactionsToPool(vector<transaction> &pool, vector<transaction> &tx) {
+    for (int i = 0; i < tx.size(); i++){
+        pool.push_back(tx[i]);
+    }
+}
+
+void addTransactionsToBlock(vector<block> &blocks, vector<transaction> &pool, int blockNum) {
+    for (int i = 0; i < TRANSACTIONS_PER_BLOCK; i++){
+        blocks.push_back(block());
+        blocks[blockNum].tx.push_back(pool[i]);
+    }
+}
+
+void removeTransactionsFromPool(vector<transaction> &pool) {
+    pool.erase(pool.begin(), pool.begin() + TRANSACTIONS_PER_BLOCK);
+}
+
+void findNewBlockHash() {
+    for (int i = 0;;i++) {
+        string hash = createHash(IntToString(i), secret);
+        if (hash[0] == '0'){
+            cout << i << ":" << hash << endl;
+            break;
+        }
+        if (i % 10000 == 0) {
+            cout << i <<endl;
+        }
+    }
+}
 
 int main (int argc, char *argv[]) {
     int selection = atoi(argv[1]);
@@ -219,12 +259,16 @@ int main (int argc, char *argv[]) {
     string givenFileName;
 
     vector<user> u;
-    // vector<transaction> tx;
-    // vector<transaction> pool;
+    vector<transaction> tx;
+    vector<transaction> pool;
+    vector<block> blocks;
 
     generateNewUsers(u, 1000);
-    // generateNewTransactions(tx, 10000);
-    // addTransactionsToPool(pool, tx);
+    generateNewTransactions(tx, 10000);
+    addTransactionsToPool(pool, tx);
+    addTransactionsToBlock(blocks, pool, 0);
+    findNewBlockHash();
+    removeTransactionsFromPool(pool);
     
     switch (selection){
         case 0: {

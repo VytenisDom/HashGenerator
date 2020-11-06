@@ -75,6 +75,16 @@ string IntToString(int a)
     return temp.str();
 }
 
+string reverseString(string str) 
+{ 
+    int n = str.length(); 
+  
+    for (int i = 0; i < n / 2; i++) {
+        swap(str[i], str[n - i - 1]); 
+    }
+    return str;
+} 
+
 long int checkPrimaryHash (long int hash) {
     // cout<<"Hash correction active"<<endl;
     const int MINIMUM = 300000000;
@@ -133,7 +143,7 @@ string createHash(string input, string secret) {
         stringstream stream;
         stream << hex << hashArr[i];
         string result( stream.str() );
-        finalHex += result;
+        finalHex += reverseString(result);
     }
     // cout<<endl;
 
@@ -242,8 +252,9 @@ void removeTransactionsFromPool(vector<transaction> &pool) {
 
 void findNewBlockHash() {
     for (int i = 0;;i++) {
-        string hash = createHash(IntToString(i), secret);
-        if (hash[0] == '0'){
+        string hash = createHash(IntToString(rand()), secret);
+        // cout<<hash<<endl;
+        if (hash[0] == '0' && hash[1] == '0' && hash[2] == '0'){
             cout << i << ":" << hash << endl;
             break;
         }

@@ -216,24 +216,57 @@ void generateNewUsers (vector<user> &u, int n) {
         u.push_back(user());
         u[i].firstName = i;
         u[i].publicKey = createHash(IntToString(rand()), secret);
-        u[i].balance = 100; // FOR TESTING PURPOSES
+        u[i].balance = 99; // FOR TESTING PURPOSES
         //100 + rand() % 1000000;
         // cout << u[i].firstName << " " <<u[i].publicKey << " " << u[i].balance << endl;
     }
 }
 
-void generateNewTransactions (vector<user> &u, vector<transaction> &tx, int n) {
+void generateNewTransactions(vector<user> &u, vector<transaction> &tx, int n) {
     srand(time(NULL));
     for (int i = 0; i < n; i++){
         tx.push_back(transaction());
-        tx[i].transactionID = createHash(IntToString(rand()), secret);
         tx[i].senderPublicKey = u[rand() % 1000].publicKey;
         tx[i].receiverPublicKey = u[rand() % 1000].publicKey;
-        tx[i].sum = 5; // FOR TESTING PURPOSES
-        //100 + rand() % 1000000
+        tx[i].sum = 50; // FOR TESTING PURPOSES
+        // string txInput = tx[i].receiverPublicKey + tx[i].senderPublicKey + IntToString(tx[i].sum);
+        // tx[i].transactionID = createHash(txInput, secret);
         // cout << u[i].firstName << " " <<u[i].publicKey << " " << u[i].balance << endl;
     }
 }
+
+void generateNewTransactionIDs(vector<transaction> &tx) {
+    srand(time(NULL));
+    for (int i = 0; i < tx.size(); i++){
+        string txInput = tx[i].receiverPublicKey + tx[i].senderPublicKey + IntToString(tx[i].sum);
+        tx[i].transactionID = createHash(txInput, secret);
+    }
+}
+
+void validatePool(vector<transaction> &pool, vector<user> &u) {
+    for (int i = 0; i < pool.size(); i++) {
+        // TxID hash validation
+        // string txInput = pool[i].receiverPublicKey + pool[i].senderPublicKey + IntToString(pool[i].sum);
+        // // cout << pool[i].transactionID << " : "<<endl << createHash(txInput, secret) << endl;
+        // if (i == 0) {
+        //     cout<<txInput<<endl;
+        // }
+        // if (pool[i].transactionID != createHash(txInput, secret)) {
+        //     pool.erase(pool.begin() + i);
+        //     i = 0;
+        // }
+
+        // User balance validation
+        for (int j = 0; j < u.size(); j++) {
+            if (pool[i].senderPublicKey == u[j].publicKey && pool[i].sum > u[j].balance) {
+                pool.erase(pool.begin() + i);
+                i = 0;
+            }
+        }
+        
+
+    }
+} 
 
 void addTransactionsToPool(vector<transaction> &pool, vector<transaction> &tx) {
     for (int i = 0; i < tx.size(); i++){
@@ -242,14 +275,22 @@ void addTransactionsToPool(vector<transaction> &pool, vector<transaction> &tx) {
 }
 
 void addTransactionsToBlock(vector<block> &blocks, vector<transaction> &pool, int blockNum) {
-    for (int i = 0; i < TRANSACTIONS_PER_BLOCK; i++){
-        blocks.push_back(block());
+    blocks.push_back(block());
+    int numOfTransactions = TRANSACTIONS_PER_BLOCK;
+    if (TRANSACTIONS_PER_BLOCK > pool.size()) {
+        numOfTransactions = pool.size();
+    }
+    for (int i = 0; i < numOfTransactions; i++){
         blocks[blockNum].tx.push_back(pool[i]);
     }
 }
 
 void makeTransactions(vector<user> &u, vector<transaction> &pool) {
-    for (int i = 0; i < TRANSACTIONS_PER_BLOCK; i++) {
+    int numOfTransactions = TRANSACTIONS_PER_BLOCK;
+    if (TRANSACTIONS_PER_BLOCK > pool.size()) {
+        numOfTransactions = pool.size();
+    }
+    for (int i = 0; i < numOfTransactions; i++) {
         for (int j = 0; j < u.size(); j++) {
             if (u[j].publicKey == pool[i].senderPublicKey) {
                 u[j].balance -= pool[i].sum;
@@ -260,13 +301,17 @@ void makeTransactions(vector<user> &u, vector<transaction> &pool) {
         }
     }
 
-    for (int j = 0; j < u.size(); j++) {
-        cout << dec << u[j].balance << hex << endl;
-    }
+    // for (int j = 0; j < u.size(); j++) {
+    //     cout << dec << u[j].balance << hex << endl;
+    // }
 }
 
 void removeTransactionsFromPool(vector<transaction> &pool) {
-    pool.erase(pool.begin(), pool.begin() + TRANSACTIONS_PER_BLOCK);
+    int numOfTransactions = TRANSACTIONS_PER_BLOCK;
+    if (TRANSACTIONS_PER_BLOCK > pool.size()) {
+        numOfTransactions = pool.size();
+    }
+    pool.erase(pool.begin(), pool.begin() + numOfTransactions);
 }
 
 bool hashMeetsRequirements (vector<block> &blocks, int currentBlock, string hash) {
@@ -275,22 +320,29 @@ bool hashMeetsRequirements (vector<block> &blocks, int currentBlock, string hash
             return false;
         }
     }
+    for (int i = 0; i < blocks.size(); i++) {
+        if (hash == blocks[i].prevBlockHash) {
+            return false;
+        }
+    }
     return true;
 }
 
-void findNewBlockHash(vector<block> &blocks, int currentBlock) {
+string findNewBlockHash(vector<block> &blocks, int currentBlock) {
     for (int i = 0;;i++) {
         string hash = createHash(IntToString(rand()), secret);
         
         if (hashMeetsRequirements(blocks, currentBlock, hash)){
             cout << dec << i << ":" << hex << hash << endl;
-            break;
+            blocks[currentBlock].nonce++;
+            return hash;
         }
         blocks[currentBlock].nonce++;
         // if (i % 10000 == 0) {
         //     cout << i <<endl;
         // }
     }
+
 }
 
 int main (int argc, char *argv[]) {
@@ -304,17 +356,29 @@ int main (int argc, char *argv[]) {
     vector<block> blocks;
 
     int currentBlock = 0;
+    string newBlockHash = "NULL";
 
     generateNewUsers(u, 1000);
-    generateNewTransactions(u, tx, 10000);
+    generateNewTransactions(u, tx, 1000);
+    generateNewTransactionIDs(tx); 
     addTransactionsToPool(pool, tx);
+    validatePool(pool, u);
+    cout << dec << "pool size is " << pool.size() << hex << endl;
+    while (pool.size() > 0) {
+        addTransactionsToBlock(blocks, pool, currentBlock);
+        blocks[currentBlock].prevBlockHash = newBlockHash;
+        newBlockHash = findNewBlockHash(blocks, currentBlock);
 
-    addTransactionsToBlock(blocks, pool, currentBlock);
-    findNewBlockHash(blocks, currentBlock);
+        makeTransactions(u, pool);
+        removeTransactionsFromPool(pool);
+        validatePool(pool, u);
+        currentBlock++;
+    }
 
-    makeTransactions(u, pool);
-    removeTransactionsFromPool(pool);
-    
+    // for (int i = 0; i < blocks.size(); i++) {
+    //     cout << blocks[i].prevBlockHash << endl;
+    // }
+
     switch (selection){
         case 0: {
             cout<<"Select Input Method via CommandLine Argument"<<endl;

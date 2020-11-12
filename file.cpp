@@ -28,10 +28,10 @@ class block {
         //Header
         string prevBlockHash;
         string timestamp;
-        string version;
+        string version = "v0.2";
         string merkelRootHash;
-        string Nonce;
-        string DiffTarget;
+        int nonce = 0;
+        int DiffTarget = 2;
         //Body
         vector<transaction> tx;
 };
@@ -216,19 +216,21 @@ void generateNewUsers (vector<user> &u, int n) {
         u.push_back(user());
         u[i].firstName = i;
         u[i].publicKey = createHash(IntToString(rand()), secret);
-        u[i].balance = 100 + rand() % 1000000;
+        u[i].balance = 100; // FOR TESTING PURPOSES
+        //100 + rand() % 1000000;
         // cout << u[i].firstName << " " <<u[i].publicKey << " " << u[i].balance << endl;
     }
 }
 
-void generateNewTransactions (vector<transaction> &tx, int n) {
+void generateNewTransactions (vector<user> &u, vector<transaction> &tx, int n) {
     srand(time(NULL));
     for (int i = 0; i < n; i++){
         tx.push_back(transaction());
         tx[i].transactionID = createHash(IntToString(rand()), secret);
-        tx[i].senderPublicKey = createHash(IntToString(rand()), secret);
-        tx[i].receiverPublicKey = createHash(IntToString(rand()), secret);
-        tx[i].sum = 50; //100 + rand() % 1000000
+        tx[i].senderPublicKey = u[rand() % 1000].publicKey;
+        tx[i].receiverPublicKey = u[rand() % 1000].publicKey;
+        tx[i].sum = 5; // FOR TESTING PURPOSES
+        //100 + rand() % 1000000
         // cout << u[i].firstName << " " <<u[i].publicKey << " " << u[i].balance << endl;
     }
 }
@@ -246,21 +248,48 @@ void addTransactionsToBlock(vector<block> &blocks, vector<transaction> &pool, in
     }
 }
 
+void makeTransactions(vector<user> &u, vector<transaction> &pool) {
+    for (int i = 0; i < TRANSACTIONS_PER_BLOCK; i++) {
+        for (int j = 0; j < u.size(); j++) {
+            if (u[j].publicKey == pool[i].senderPublicKey) {
+                u[j].balance -= pool[i].sum;
+            }
+            if (u[j].publicKey == pool[i].receiverPublicKey) {
+                u[j].balance += pool[i].sum;
+            }
+        }
+    }
+
+    for (int j = 0; j < u.size(); j++) {
+        cout << dec << u[j].balance << hex << endl;
+    }
+}
+
 void removeTransactionsFromPool(vector<transaction> &pool) {
     pool.erase(pool.begin(), pool.begin() + TRANSACTIONS_PER_BLOCK);
 }
 
-void findNewBlockHash() {
+bool hashMeetsRequirements (vector<block> &blocks, int currentBlock, string hash) {
+    for (int i = 0; i < blocks[currentBlock].DiffTarget; i++) {
+        if (hash[i] != '0') {
+            return false;
+        }
+    }
+    return true;
+}
+
+void findNewBlockHash(vector<block> &blocks, int currentBlock) {
     for (int i = 0;;i++) {
         string hash = createHash(IntToString(rand()), secret);
-        // cout<<hash<<endl;
-        if (hash[0] == '0' && hash[1] == '0' && hash[2] == '0'){
-            cout << i << ":" << hash << endl;
+        
+        if (hashMeetsRequirements(blocks, currentBlock, hash)){
+            cout << dec << i << ":" << hex << hash << endl;
             break;
         }
-        if (i % 10000 == 0) {
-            cout << i <<endl;
-        }
+        blocks[currentBlock].nonce++;
+        // if (i % 10000 == 0) {
+        //     cout << i <<endl;
+        // }
     }
 }
 
@@ -274,11 +303,16 @@ int main (int argc, char *argv[]) {
     vector<transaction> pool;
     vector<block> blocks;
 
+    int currentBlock = 0;
+
     generateNewUsers(u, 1000);
-    generateNewTransactions(tx, 10000);
+    generateNewTransactions(u, tx, 10000);
     addTransactionsToPool(pool, tx);
-    addTransactionsToBlock(blocks, pool, 0);
-    findNewBlockHash();
+
+    addTransactionsToBlock(blocks, pool, currentBlock);
+    findNewBlockHash(blocks, currentBlock);
+
+    makeTransactions(u, pool);
     removeTransactionsFromPool(pool);
     
     switch (selection){

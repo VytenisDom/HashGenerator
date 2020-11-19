@@ -46,7 +46,7 @@ Both files have 100000 strings. <br/>
   1. Download and unzip or git clone.
   2. Run <b>g++ -o nameOfExe file.cpp</b> to compile.
   3. Run <b>./nameOfExe selectedModeNumber</b> to launch.
-  <br/>
+  
  # Conclusions <br/>
  While overall I'm pretty happy with the current state of the algorithm, it is by no means perfect.
  Security-wise - I think this hash could be easily reversed-engineered by an experienced developer, with the source code or without. 
@@ -56,7 +56,7 @@ Both files have 100000 strings. <br/>
  Probably the weakest point in this algorithm is collisions. While they are rare, collisions are way more common when the string size is lower (8-15 characters). 
  Also, the similarity percentages aren't great either. 
  On the other hand, in my opinion, the performance stand-point is the only place where this kind of algorithm truly shines. 
- <br/>
+
  # Hash Generator, Release v0.2 <br/>
   Updated the project to function as a primitive blockchain. Added users, transactions, pools, blocks, candidates, PoW mining and a final result of a chain of blocks with transactions. <br/>
   I have to admit, I've skipped a few requirements. Firstly, I've done nothing related to Merkle roots. And secondly, I don't check transaction validity between creation and addition to the pool. <br/>

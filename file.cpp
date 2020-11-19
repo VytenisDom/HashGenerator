@@ -36,6 +36,15 @@ class block {
         vector<transaction> tx;
 };
 
+class candidate {
+    public:
+        int nonce = 0;
+        int DiffTarget = 2;
+        int id = 0;
+        vector<transaction> tx;
+        vector<int> poolIndexes;
+};
+
 string hexCharToBinStr (char c)
 {
     switch(c)
@@ -90,9 +99,7 @@ long int checkPrimaryHash (long int hash) {
     const int MINIMUM = 300000000;
     // -2147483648
     long long int MAXIMUM = 40000000000;
-    // cout<<abs(hash)<<" "<< MINIMUM<< ", "<<abs(hash)<<" "<<MAXIMUM<<endl;
     while (abs(hash) < MINIMUM || abs(hash) > MAXIMUM) {
-        // cout << hash <<endl;
         if (abs(hash) < MINIMUM) {
             if (abs(hash) < MINIMUM / 2) {
                 hash+=MINIMUM;
@@ -103,19 +110,11 @@ long int checkPrimaryHash (long int hash) {
             hash /= 3.75;
         }
     }
-    // cout << "RETURNING: " << hash << endl;
     return hash;
 }
 long int lastHash = 1024;
 string lastInput = "";
 string lastFinalHex = "";
-
-double collisionCount = 0;
-double comparisonCount = 0;
-double binSumOfSimilarityPercentages = 0;
-double sumOfSimilarityPercentages = 0;
-double minSimilarityPercentage = 100;
-double maxSimilarityPercentage = 0;
 
 const int TRANSACTIONS_PER_BLOCK = 100;
 string createHash(string input, string secret) {
@@ -125,9 +124,6 @@ string createHash(string input, string secret) {
         hash += (input[i] * input[i]) + pow(i * 2, 2);
     }
     hash = checkPrimaryHash(hash);
-    if (hash == lastHash) {
-        collisionCount++;
-    }
     lastHash = hash;
     lastInput = input;
     for (int i = 1; i <= 8; i++) {
@@ -137,43 +133,14 @@ string createHash(string input, string secret) {
 
     string finalHex = "";
     for (int i = 0; i < 8; i++) {
-        // cout << hex << hashArr[i];
         cout << hex;
 
         stringstream stream;
         stream << hex << hashArr[i];
-        string result( stream.str() );
+        string result(stream.str());
         finalHex += reverseString(result);
     }
-    // cout<<endl;
-
-    string finalBin = getBinStrFromHexStr(finalHex);
-    string lastFinalBin = getBinStrFromHexStr(lastFinalHex);
     
-    double similarBin = 0;
-    for (int i = 0; i < finalBin.size(); i++) {
-        if (finalBin[i] == lastFinalBin[i]) {
-            similarBin++;
-        }
-    }
-    double binSimilarityPercentage = (similarBin / finalBin.size()) * 100;
-    binSumOfSimilarityPercentages += binSimilarityPercentage;
-
-    double similarHex = 0;
-    for (int i = 0; i < finalHex.size(); i++) {
-        if (finalHex[i] == lastFinalHex[i]) {
-            similarHex++;
-        }
-    }
-    double similarityPercentage = (similarHex / finalHex.size()) * 100;
-    sumOfSimilarityPercentages += similarityPercentage;
-    comparisonCount++;
-    if (similarityPercentage > maxSimilarityPercentage) {
-        maxSimilarityPercentage = similarityPercentage;
-    } else if (similarityPercentage < minSimilarityPercentage) {
-        minSimilarityPercentage = similarityPercentage;
-    }
-    lastFinalHex = finalHex;
     return finalHex;
 }
 
@@ -199,26 +166,13 @@ string readFromFile(string fileName) {
 }
 string secret = readFromFile("secretSalt");
 
-void readFromFileByLine (string fileName) {
-    ifstream infile (fileName);
-    string line = "as";
-    
-    for (int i = 0; ;i++) {
-        if (infile.eof()) break;
-        getline(infile, line);
-        createHash(line, secret);
-    }
-}
-
 void generateNewUsers (vector<user> &u, int n) {
     srand(time(NULL));
     for (int i = 0; i < n; i++){
         u.push_back(user());
         u[i].firstName = i;
         u[i].publicKey = createHash(IntToString(rand()), secret);
-        u[i].balance = 99; // FOR TESTING PURPOSES
-        //100 + rand() % 1000000;
-        // cout << u[i].firstName << " " <<u[i].publicKey << " " << u[i].balance << endl;
+        u[i].balance = 100 + rand() % 1000000;
     }
 }
 
@@ -228,10 +182,7 @@ void generateNewTransactions(vector<user> &u, vector<transaction> &tx, int n) {
         tx.push_back(transaction());
         tx[i].senderPublicKey = u[rand() % 1000].publicKey;
         tx[i].receiverPublicKey = u[rand() % 1000].publicKey;
-        tx[i].sum = 50; // FOR TESTING PURPOSES
-        // string txInput = tx[i].receiverPublicKey + tx[i].senderPublicKey + IntToString(tx[i].sum);
-        // tx[i].transactionID = createHash(txInput, secret);
-        // cout << u[i].firstName << " " <<u[i].publicKey << " " << u[i].balance << endl;
+        tx[i].sum = 100 + rand() % 1000;
     }
 }
 
@@ -274,14 +225,33 @@ void addTransactionsToPool(vector<transaction> &pool, vector<transaction> &tx) {
     }
 }
 
-void addTransactionsToBlock(vector<block> &blocks, vector<transaction> &pool, int blockNum) {
-    blocks.push_back(block());
+void addTransactionsToCandidates(vector<candidate> &candidates, vector<transaction> &pool) {
+    int numOfTransactions = TRANSACTIONS_PER_BLOCK;
+    if (TRANSACTIONS_PER_BLOCK > pool.size()) {
+        numOfTransactions = pool.size();
+    }
+    for (int c = 0; c < 5; c++) {
+        candidates.push_back(candidate());
+        candidates[c].id = c;
+        for (int i = 0; i < numOfTransactions; i++){
+            int randomIndex = rand() % pool.size();
+            candidates[c].poolIndexes.push_back(randomIndex);
+            candidates[c].tx.push_back(pool[randomIndex]);
+        }
+    }
+}
+
+void addTransactionsToBlock(vector<block> &blocks, vector<transaction> &pool, int blockNum, vector<int> &poolIndexes, vector<candidate> candidates, int candidateIndex) {
+    
     int numOfTransactions = TRANSACTIONS_PER_BLOCK;
     if (TRANSACTIONS_PER_BLOCK > pool.size()) {
         numOfTransactions = pool.size();
     }
     for (int i = 0; i < numOfTransactions; i++){
-        blocks[blockNum].tx.push_back(pool[i]);
+        // Pass up the poolIndexes
+        poolIndexes.push_back(candidates[candidateIndex].poolIndexes[i]);
+        // Pass up the transactions
+        blocks[blockNum].tx.push_back(candidates[candidateIndex].tx[i]);
     }
 }
 
@@ -300,22 +270,23 @@ void makeTransactions(vector<user> &u, vector<transaction> &pool) {
             }
         }
     }
-
-    // for (int j = 0; j < u.size(); j++) {
-    //     cout << dec << u[j].balance << hex << endl;
-    // }
 }
 
-void removeTransactionsFromPool(vector<transaction> &pool) {
+void removeTransactionsFromPool(vector<transaction> &pool, vector<int> &poolIndexes) {
     int numOfTransactions = TRANSACTIONS_PER_BLOCK;
     if (TRANSACTIONS_PER_BLOCK > pool.size()) {
         numOfTransactions = pool.size();
     }
-    pool.erase(pool.begin(), pool.begin() + numOfTransactions);
+
+    for (int i = 0; i < numOfTransactions; i++) {
+        pool.erase(pool.begin() + poolIndexes[i]);
+    }
+
+    poolIndexes.clear();    
 }
 
-bool hashMeetsRequirements (vector<block> &blocks, int currentBlock, string hash) {
-    for (int i = 0; i < blocks[currentBlock].DiffTarget; i++) {
+bool hashMeetsRequirements (vector<block> &blocks, vector<candidate> &candidates, int currentBlock, string hash) {
+    for (int i = 0; i < candidates[currentBlock].DiffTarget; i++) {
         if (hash[i] != '0') {
             return false;
         }
@@ -328,21 +299,19 @@ bool hashMeetsRequirements (vector<block> &blocks, int currentBlock, string hash
     return true;
 }
 
-string findNewBlockHash(vector<block> &blocks, int currentBlock) {
-    for (int i = 0;;i++) {
+string findNewBlockHash(vector<block> &blocks, vector<candidate> &candidates, int currentBlock, int numOfTries) {
+    for (int i = 0; i < numOfTries; i++) {
         string hash = createHash(IntToString(rand()), secret);
         
-        if (hashMeetsRequirements(blocks, currentBlock, hash)){
+        if (hashMeetsRequirements(blocks, candidates, currentBlock, hash)){
             cout << dec << i << ":" << hex << hash << endl;
-            blocks[currentBlock].nonce++;
+            candidates[currentBlock].nonce++;
             return hash;
         }
-        blocks[currentBlock].nonce++;
-        // if (i % 10000 == 0) {
-        //     cout << i <<endl;
-        // }
+        candidates[currentBlock].nonce++;
     }
-
+    printf ("%s \n", "Kandidatui nepavyko rasti hasho.");
+    return "";
 }
 
 int main (int argc, char *argv[]) {
@@ -354,6 +323,9 @@ int main (int argc, char *argv[]) {
     vector<transaction> tx;
     vector<transaction> pool;
     vector<block> blocks;
+    vector<candidate> candidates;
+
+    vector<int> poolIndexes;
 
     int currentBlock = 0;
     string newBlockHash = "NULL";
@@ -365,72 +337,33 @@ int main (int argc, char *argv[]) {
     validatePool(pool, u);
     cout << dec << "pool size is " << pool.size() << hex << endl;
     while (pool.size() > 0) {
-        addTransactionsToBlock(blocks, pool, currentBlock);
+        blocks.push_back(block());
+        addTransactionsToCandidates(candidates, pool);
+        
         blocks[currentBlock].prevBlockHash = newBlockHash;
-        newBlockHash = findNewBlockHash(blocks, currentBlock);
+
+        int numOfTries = 10000;
+        while (true) {
+            int randomCandidate = rand() % candidates.size();
+            printf ("%s", "Dabar bandancio kandidato id : ");
+            printf ("%d \n", candidates[randomCandidate].id);
+            string result = findNewBlockHash(blocks, candidates, randomCandidate, numOfTries);
+            if (result != ""){
+                newBlockHash = result;
+                addTransactionsToBlock(blocks, pool, currentBlock, poolIndexes, candidates, randomCandidate);
+                break;
+            } else if (candidates.size() == 1){
+                printf ("%s \n", "Kandidatai baigesi. Keliamas bandymu skaicius. ");
+                numOfTries = 10000000;
+            } else {
+                candidates.erase(candidates.begin() + randomCandidate);
+            }
+        }
 
         makeTransactions(u, pool);
-        removeTransactionsFromPool(pool);
+        removeTransactionsFromPool(pool, poolIndexes);
+        candidates.clear();
         validatePool(pool, u);
         currentBlock++;
-    }
-
-    // for (int i = 0; i < blocks.size(); i++) {
-    //     cout << blocks[i].prevBlockHash << endl;
-    // }
-
-    switch (selection){
-        case 0: {
-            cout<<"Select Input Method via CommandLine Argument"<<endl;
-            cout<<"1: File input"<<endl;
-            cout<<"2: Manual input"<<endl;
-            cout<<"3: Constitution"<<endl;
-            cout<<"4: Random Pairs"<<endl;
-            cout<<"5: Similar Pairs"<<endl;
-        }
-        case 1: {
-            cout<<"Enter file name"<<endl;
-            getline(cin, givenFileName);
-            input = readFromFile(givenFileName);
-            createHash(input, secret);
-            break;
-        }
-        case 2: {
-            cout<<"Enter any string"<<endl;
-            getline(cin, input);
-            createHash(input, secret);
-            break;
-        }
-        case 3: {
-            auto start = std::chrono::steady_clock::now();
-            readFromFileByLine("konstitucija.txt");
-            auto ending = std::chrono::steady_clock::now();
-            cout<<"Done in : "<<std::chrono::duration <double, milli>(ending - start).count()<<" ms"<<endl;
-            break;
-        }
-        case 4: {
-            auto start = std::chrono::steady_clock::now();
-            readFromFileByLine("pairs.txt");
-            cout << "Collision Percentage - " << (collisionCount * 100) / 100000 << "%" << endl;
-            cout << "Similarity Percentage Average - " << sumOfSimilarityPercentages / comparisonCount << "%" << endl;
-            cout << "Similarity Percentage Average (Binary-level) - " << binSumOfSimilarityPercentages / comparisonCount << "%" << endl;
-            cout << "Lowest Similarity Percentage - " << minSimilarityPercentage << "%" << endl;
-            cout << "Highest Similarity Percentage - " << maxSimilarityPercentage << "%" << endl;
-            auto ending = std::chrono::steady_clock::now();
-            cout<<"Done in : "<<std::chrono::duration <double, milli>(ending - start).count()<<" ms"<<endl;
-            break;
-        }
-        case 5: {
-            auto start = std::chrono::steady_clock::now();
-            readFromFileByLine("similarPairs.txt");
-            cout << "Collision Percentage - " << (collisionCount * 100) / 100000 << "%" << endl;
-            cout << "Similarity Percentage Average - " << sumOfSimilarityPercentages / comparisonCount << "%" << endl;
-            cout << "Similarity Percentage Average (Binary-level) - " << binSumOfSimilarityPercentages / comparisonCount << "%" << endl;
-            cout << "Lowest Similarity Percentage - " << minSimilarityPercentage << "%" << endl;
-            cout << "Highest Similarity Percentage - " << maxSimilarityPercentage << "%" << endl;
-            auto ending = std::chrono::steady_clock::now();
-            cout<<"Done in : "<<std::chrono::duration <double, milli>(ending - start).count()<<" ms"<<endl;
-            break;
-        }
     }
 }

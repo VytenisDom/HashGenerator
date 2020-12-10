@@ -27,7 +27,7 @@ class block {
     public:
         //Header
         string prevBlockHash;
-        string timestamp;
+        time_t timestamp = time(0);
         string version = "v0.2";
         string merkelRootHash;
         int nonce = 0;
@@ -252,6 +252,8 @@ void addTransactionsToBlock(vector<block> &blocks, vector<transaction> &pool, in
         poolIndexes.push_back(candidates[candidateIndex].poolIndexes[i]);
         // Pass up the transactions
         blocks[blockNum].tx.push_back(candidates[candidateIndex].tx[i]);
+        // Pass up the nonce
+        blocks[blockNum].nonce = candidates[candidateIndex].nonce;
     }
 }
 
@@ -342,7 +344,7 @@ int main (int argc, char *argv[]) {
         
         blocks[currentBlock].prevBlockHash = newBlockHash;
 
-        int numOfTries = 10000;
+        int numOfTries = 1000;
         while (true) {
             int randomCandidate = rand() % candidates.size();
             printf ("%s", "Dabar bandancio kandidato id : ");
